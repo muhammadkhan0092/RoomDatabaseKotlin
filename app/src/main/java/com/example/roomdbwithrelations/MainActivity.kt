@@ -7,7 +7,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.roomdbwithrelations.data.Chapters
 import com.example.roomdbwithrelations.data.Course
+import com.example.roomdbwithrelations.data.CourseFullData
 import com.example.roomdbwithrelations.data.CourseWithChapters
+import com.example.roomdbwithrelations.data.StudentCourseCross
+import com.example.roomdbwithrelations.data.Students
 import com.example.roomdbwithrelations.databinding.ActivityMainBinding
 import com.example.roomdbwithrelations.di.SchoolApp
 import com.example.roomdbwithrelations.utils.Resource
@@ -37,6 +40,8 @@ class MainActivity : AppCompatActivity() {
         observeOnGet()
         observeChaptersInset()
         observeCoursesInsert()
+        observeCross()
+        observeStudentsInsert()
     }
 
     private fun observeOnGet() {
@@ -61,14 +66,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setData(data: List<CourseWithChapters>) {
-        var text = "COURSE \t CHAPTERS\n"
+    private fun setData(data: List<CourseFullData>) {
+        var text = "COURSE        CHAPTERS        STUDENTS\n"
         data.forEach {
             text+="${it.course.title} \t \t"
             it.chapters.forEach {chapters->
                 text+="${chapters.name}   "
             }
-            text+="\n"
+            it.student.forEach {students->
+                text+="${students.studentName}   "
+            }
+            text+="\n\n"
         }
         binding.textView.text = text
     }
@@ -87,6 +95,52 @@ class MainActivity : AppCompatActivity() {
                     is Resource.Success<*> -> {
                         binding.textView.text = ""
                         Log.d("KHAN","DATA CHAPTERS SET SUCCESSFULL")
+                    }
+                    is Resource.Unspecified<*> -> {
+
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeStudentsInsert() {
+        lifecycleScope.launch {
+            vm.insertStudents.collectLatest {
+                when(it){
+                    is Resource.Error<*> -> {
+                        Log.d("KHAN","ERROR INSERTING Students ${it.message}")
+                        binding.textView.text = ""
+                    }
+                    is Resource.Loading<*> ->{
+                        binding.textView.text = "Loading ..."
+                    }
+                    is Resource.Success<*> -> {
+                        binding.textView.text = ""
+                        Log.d("KHAN","DATA STUDENTS SET SUCCESSFULL")
+                    }
+                    is Resource.Unspecified<*> -> {
+
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeCross() {
+        lifecycleScope.launch {
+            vm.insertChapters.collectLatest {
+                when(it){
+                    is Resource.Error<*> -> {
+                        Log.d("KHAN","ERROR INSERTING CROSS ${it.message}")
+                        binding.textView.text = ""
+                    }
+                    is Resource.Loading<*> ->{
+                        binding.textView.text = "Loading ..."
+                    }
+                    is Resource.Success<*> -> {
+                        binding.textView.text = ""
+                        Log.d("KHAN","DATA CROSS SET SUCCESSFULL")
                     }
                     is Resource.Unspecified<*> -> {
 
@@ -132,9 +186,8 @@ class MainActivity : AppCompatActivity() {
                 Course(courseId = 2, title = "Physics"),
                 Course(courseId = 3, title = "Computer Science")
             )
-
             val chapters = listOf(
-                Chapters( 0, courseOwnerId = 1, name = "Algebra"),
+                Chapters(0, courseOwnerId = 1, name = "Algebra"),
                 Chapters(0, courseOwnerId = 1, name = "Geometry"),
 
                 Chapters(0, courseOwnerId = 2, name = "Mechanics"),
@@ -143,8 +196,24 @@ class MainActivity : AppCompatActivity() {
                 Chapters(0, courseOwnerId = 3, name = "Data Structures"),
                 Chapters(0, courseOwnerId = 3, name = "Operating Systems")
             )
+            val students = listOf(
+                Students(studentId = 1, studentName = "Ali"),
+                Students(studentId = 2, studentName = "Sara"),
+                Students(studentId = 3, studentName = "John")
+            )
+
+            val courseStudentRefs = listOf(
+                StudentCourseCross(courseId = 1, studentId = 1),
+                StudentCourseCross(courseId = 1, studentId = 2),
+                StudentCourseCross(courseId = 2, studentId = 2),
+                StudentCourseCross(courseId = 2, studentId = 3),
+                StudentCourseCross(courseId = 3, studentId = 1),
+                StudentCourseCross(courseId = 3, studentId = 3)
+            )
             vm.insertCourses(courses)
             vm.insertChapters(chapters)
+            vm.insertStudents(students)
+            vm.insertCross(courseStudentRefs)
         }
     }
 
